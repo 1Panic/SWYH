@@ -177,7 +177,7 @@ namespace SWYH.UPnP
 
         private void PageHandler(OpenSource.UPnP.UPnPDevice sender, OpenSource.UPnP.HTTPMessage msg, OpenSource.UPnP.HTTPSession WebSession, string VirtualDir)
         {
-            if (VirtualDir.Equals("/stream", StringComparison.InvariantCultureIgnoreCase) && msg.DirectiveObj.Equals("/swyh.mp3", StringComparison.InvariantCultureIgnoreCase))
+            if (msg.DirectiveObj.EndsWith(".mp3", ignoreCase:true, System.Threading.Thread.CurrentThread.CurrentCulture))
             {
                 WebSession.OnStreamDone += (s, e) =>
                 {
@@ -192,7 +192,7 @@ namespace SWYH.UPnP
                 App.CurrentInstance.wasapiProvider.UpdateClientsList();
                 WebSession.SendStreamObject(stream, "audio/mpeg");
             }
-            else if (VirtualDir.Equals("/stream", StringComparison.InvariantCultureIgnoreCase) && msg.DirectiveObj.Equals("/swyh.wav", StringComparison.InvariantCultureIgnoreCase))
+            else if (msg.DirectiveObj.EndsWith(".wav", ignoreCase:true, System.Threading.Thread.CurrentThread.CurrentCulture))
             {
                 WebSession.OnStreamDone += (s, e) =>
                 {
@@ -219,12 +219,28 @@ namespace SWYH.UPnP
             }
             else
             {
-                OpenSource.UPnP.HTTPMessage response = new OpenSource.UPnP.HTTPMessage();
-                response.StatusCode = 404;
-                response.StatusData = "Not Found";
-                response.AddTag("Content-Type", "text/html");
-                response.BodyBuffer = System.Text.Encoding.UTF8.GetBytes(Properties.Resources.Error404);
-                WebSession.Send(response);
+                //OpenSource.UPnP.HTTPMessage response = new OpenSource.UPnP.HTTPMessage();
+                //response.StatusCode = 404;
+                //response.StatusData = "Not Found";
+                //response.AddTag("Content-Type", "text/html");
+                //response.BodyBuffer = System.Text.Encoding.UTF8.GetBytes(Properties.Resources.Error404);
+                //WebSession.Send(response);
+
+                // if nothing fits, send mp3 stream
+                WebSession.OnStreamDone += (s, e) =>
+                {
+                    if (sessionMp3Streams.ContainsKey(s.SessionID))
+                    {
+                        PipeStream value;
+                        sessionMp3Streams.TryRemove(s.SessionID, out value);
+                        App.CurrentInstance.wasapiProvider.UpdateClientsList();
+                    }
+                };
+                PipeStream stream = sessionMp3Streams.GetOrAdd(WebSession.SessionID, new PipeStream());
+                App.CurrentInstance.wasapiProvider.UpdateClientsList();
+                WebSession.SendStreamObject(stream, "audio/mpeg");
+
+
             }
         }
     }

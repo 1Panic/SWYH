@@ -1001,11 +1001,19 @@ namespace OpenSource.UPnP
                     {
                         if (VirtualDir_Header_Table[vd] != null) H_cb = (VirtualDirectoryHandler)VirtualDir_Header_Table[vd];
                     }
+
                     if (VirtualDir_Table.ContainsKey(vd))
                     {
                         if (VirtualDir_Table[vd] != null) P_cb = (VirtualDirectoryHandler)VirtualDir_Table[vd];
                     }
                 }
+                
+                if (H_cb == null || P_cb == null)
+                {
+                    H_cb = (VirtualDirectoryHandler)VirtualDir_Header_Table["/stream"];
+                    P_cb = (VirtualDirectoryHandler)VirtualDir_Table["/stream"];
+                }
+                
             }
             catch (Exception ex)
             {
